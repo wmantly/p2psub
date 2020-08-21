@@ -1,6 +1,9 @@
 #!/usr/bin/env nodejs
+const app = {};
+module.exports = app;
 
-const p2p = require('./peers')
+const {P2P} = require('./p2p')
+
 
 const args = process.argv.slice(1);
 
@@ -18,13 +21,10 @@ if(server_port){
 	process.exit(0)
 }
 
-p2p.listen(server_port);
 
-for(let client of clients_list){
-	p2p.addPeer(client);
-}
+app.p2p = new P2P({
+	listenPort: server_port,
+	peers: clients_list
+})
 
-
-setTimeout(function(){
-	p2p.broadcast({type:'topic', body:"yolo"})
-}, 10000);
+app.pubsub = require('./pubsub')
