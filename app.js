@@ -1,5 +1,6 @@
 #!/usr/bin/env nodejs
 const app = {};
+const pubsub = new (require('./pubsub')).PubSub();
 module.exports = app;
 
 const {P2P} = require('./p2p')
@@ -25,4 +26,22 @@ app.p2p = new P2P({
 	peers: clients_list
 })
 
-app.pubsub = require('./pubsub')
+app.pub = pubsub.pub;
+app.sub = pubsub.sub;
+
+
+app.sub(/.*/gi, function(data, topic){
+	if(data.__local) return false;
+	data.__local = true;
+	app.p2p.broadcast({
+		type:'topic',
+		body:{
+			topic: topic,
+			data: data
+		}
+	});
+});
+
+app.p2p.onData(function(data){
+	if(data.type === 'topic') app.publish(data.body.topic, data.body.data, true);
+});
