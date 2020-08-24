@@ -116,6 +116,9 @@ list of peers to connect with.
 Methods are provided by either the `P2P` or `PubSub` classes. The `P2PSub` class
 is a mix of both classes and merges the Pub/Sub with p2p functions.
 
+The `P2PSub` class provides `subscribe()`, `publish()`, `addPeer()` and
+`removePeer()`. Please see the methods below for detailed usage.
+
 #### Provided by `PubSub` class
 
 * `subscribe(topic, callback-function)` Sets a function to be called on `topic`
@@ -129,7 +132,7 @@ is a mix of both classes and merges the Pub/Sub with p2p functions.
 * `topics` An instance attribute holding an Object on topics and bound callbacks.
 	This is not exposed by the `P2PSub` class.
 
-#### Provided by `P2P`
+#### Provided by `P2P` class
 
 * `addPeer(peer)` Adds a remote peer to the local peers connections. `peer` can
 	passed as a single sting with a hostname and port, `'remotehost.com:7575'`,
