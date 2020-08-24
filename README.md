@@ -83,6 +83,9 @@ p2p.subscribe(\.\, (data)=> console.log(data));
 
 ### P2PSub instance options
 
+All of these are provided, and passed to the `P2P` class. `PubSub` takes no
+instance variables.
+
 `listenPort` Optional, type Number or String. Sets the incoming TCP port for the
 local peer to listen on. If this is left blank, the local peer will not accept
 incoming peers. Default is `undefined`
@@ -157,3 +160,12 @@ The `P2PSub` class provides `subscribe()`, `publish()`, `addPeer()` and
 * `peerID` An instance attribute holding a String for the local `peerID`. This
 	is randomly generated and is for internal use. This is not exposed by the
 	`P2PSub` class.
+
+## Todo
+
+* Add timestamps to each message.
+* Change the parsing of the message move `sentTo` in the prototype before
+	passing the class.
+* Add optional TSL
+* Internal ability to publish new peers across the network.
+* Add config file for CLI mode.
