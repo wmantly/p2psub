@@ -21,7 +21,7 @@ class P2P {
 		this.onDataCallbacks = [];
 
 		// Set the logging level
-		this.logLevel = args.logLevel || false;
+		this.logLevel = args.logLevel || [];
 
 		// If a listen port was specified, have this peer listen for incoming
 		// connection
