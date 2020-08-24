@@ -18,7 +18,7 @@
     "pubsub",
     "json",
     "publish",
-    "subscribe",
+    "subscribe"
   ],
     "repository": {
       "type": "git",
