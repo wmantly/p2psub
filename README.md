@@ -1,6 +1,6 @@
 # node-p2p-simple
 
-Peer to peer JSON Pub/Sub with no extremal dependencies. Each peer can act as
+Mesh peer to peer JSON Pub/Sub with no extremal dependencies. Each peer can act as
 server and client, just a client or a simple relay peer. Topics can be
 subscribed to using a simple string or regex pattern.
 
