@@ -7,7 +7,7 @@
     {
       "name": "William Mantly",
       "email": "wmantly@gmail.com"
-    },
+    }
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
