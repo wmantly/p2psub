@@ -1,4 +1,4 @@
-# node-p2p-simple
+# NPM p2psub
 
 Mesh peer to peer JSON Pub/Sub with no extremal dependencies. Each peer can act as
 server and client, just a client or a simple relay peer. Topics can be
@@ -14,9 +14,11 @@ subscribed to using a simple string or regex pattern.
 	customization. 
 * **No dependences.**
 
+[![NPM](https://nodei.co/npm/p2psub.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/p2psub/)
+
 ## Install
 
-`npm install <Name Soon!> --save`
+`npm install p2psub --save`
 
 
 ## Usage
@@ -24,7 +26,7 @@ subscribed to using a simple string or regex pattern.
 Instantiate a `P2PSub` instance:
 
 ```
-const {P2PSub} = require('<Name Soon!>');
+const {P2PSub} = require('p2psub');
 
 const p2p = new P2PSub({
 	listenPort: 7575,
