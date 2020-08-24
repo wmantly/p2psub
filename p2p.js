@@ -3,6 +3,7 @@ const net = require('net');
 
 class P2P {
 	constructor(args){
+		args = args || {};
 
 		// The list of clients this peer wants to connect to
 		this.wantedPeers = new Set();
@@ -19,6 +20,9 @@ class P2P {
 		// Hold the data callbacks when a message is received 
 		this.onDataCallbacks = [];
 
+		// Set the logging level
+		this.logLevel = args.logLevel || false;
+
 		// If a listen port was specified, have this peer listen for incoming
 		// connection
 		if(args.listenPort){
@@ -28,6 +32,14 @@ class P2P {
 		// If a list of peers in supplied, add them.
 		if(args.peers){
 			this.addPeer(args.peers);
+		}
+
+		this.__log('info', 'Local peerID', this.peerID);
+	}
+
+	__log(type, ...message){
+		if(this.logLevel || this.logLevel === 'all' || this.logLevel.includes(type)){
+			console[type](...message);
 		}
 	}
 
@@ -72,7 +84,7 @@ class P2P {
 		let p2p = this;
 
 		peer.on('connect', function(){
-			console.info(`Peer ${address} is now connected.`);
+			p2p.__log('info', `Peer ${address} is now connected.`);
 			peer.peerConnectAddress = `${address}:${port}`
 
 			// When a connection is started, send a message informing the remote
@@ -81,7 +93,7 @@ class P2P {
 		});
 		
 		peer.on('close', function(){
-			console.info(`Client Peer ${address}, ${peer.peerID} droped.`);
+			p2p.__log('info', `Client Peer ${address}, ${peer.peerID} droped.`);
 			delete p2p.connectedPeers[peer.peerID];
 		});
 
@@ -91,9 +103,9 @@ class P2P {
 
 		peer.on('error', function(error){
 			if(error.syscall === 'connect' && error.code === 'ECONNREFUSED'){
-				console.info(`Peer ${error.address}:${error.port} connection refussed!`);
+				p2p.__log('info', `Peer ${error.address}:${error.port} connection refussed!`);
 			}else{
-				console.warn('client EVENT error:', arguments);
+				p2p.__log('warn', 'client EVENT error:', arguments);
 			}
 		});
 	}
@@ -152,18 +164,22 @@ class P2P {
 			});
 
 			clientSocket.on('close', function(){
-				console.info(`server Peer ${clientSocket.remoteAddress} - ${clientSocket.peerID} droped.`);
+				p2p.__log('info', `server Peer ${clientSocket.remoteAddress} - ${clientSocket.peerID} droped.`);
 				delete p2p.connectedPeers[clientSocket.peerID];
 			});
 
 		});
 
 		serverSocket.on('listening', function(){
-			console.log('p2p server listening on', port,)
+			p2p.__log('info','p2p server listening on', port,)
 		});
 
-		serverSocket.on('error', function(){
-			console.log('server EVENT error:', arguments);
+		serverSocket.on('error', function(error){
+			if(error.syscall === 'listen' && error.code === 'EADDRINUSE'){
+				console.error('ERROR: Server listening port', port, 'address already in use.')
+				process.exit(2)	
+			}
+			p2p.__log('error','server EVENT error:', arguments);
 		});
 
 		serverSocket.listen(Number(port));
@@ -197,17 +213,17 @@ class P2P {
 
 		// Drop heart beats
 		if(message.type === "heartbeat"){
-			console.log('heartbeat from', from);
+			this.__log('info', 'heartbeat from', from);
 			return ;
 		}
 
 		// Register new clients with this peer, drop them if a connection
 		// already exists
 		if(message.type === "register"){
-			console.log('registering peer', message.id, socket.remoteAddress)
+			this.__log('info', 'registering peer', message.id, socket.remoteAddress)
 
 			if(Object.keys(this.connectedPeers).includes(message.id)){
-				console.log(`Dropping ${message.id}, already connected`)
+				this.__log('info', `Dropping ${message.id}, already connected`)
 				socket.end();
 			}else{
 				socket.peerID = message.id
@@ -217,6 +233,8 @@ class P2P {
 			}
 			return ;
 		}
+
+		this.__log('info', 'message', message);
 
 		// forward the message to other peers
 		this.broadcast(message, message.sentTo);

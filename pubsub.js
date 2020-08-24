@@ -9,6 +9,8 @@ class PubSub{
 			topic = "__REGEX__";
 		}
 
+		// console.log(this)
+// 
 		// create the topic if not yet created
 		if(!this.topics[topic]) this.topics[topic] = [];
 
@@ -17,7 +19,7 @@ class PubSub{
 	}
 
 	matchTopics(topic){
-		let topics = [... this.topics[topic] ? this.topics[topic] : []]
+		let topics = [... this.topics[topic] ? this.topics[topic] : []];
 
 		// console.log(this.topics)
 		if(!this.topics['__REGEX__']) return topics;
