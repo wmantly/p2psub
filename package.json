@@ -1,11 +1,28 @@
 {
-  "name": "vpn-p2p",
-  "version": "1.0.0",
-  "description": "",
+  "name": "p2psub",
+  "version": "0.1.0",
+  "description": "Mesh peer to peer JSON Pub/Sub with no extremal dependencies. Each peer can act as server and client, just a client or a simple relay peer. Topics can be subscribed to using a simple string or regex pattern.",
   "main": "app.js",
+  "author": [
+    {
+      "name": "William Mantly",
+      "email": "wmantly@gmail.com"
+    },
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+    "keywords": [
+    "mesh",
+    "p2p",
+    "pubsub",
+    "json",
+    "publish",
+    "subscribe",
+  ],
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/wmantly/p2psub"
+    },
   "license": "MIT"
 }
