@@ -93,7 +93,8 @@ A simple relay peer can be set up using just the CLI, no code required. This
 peer will only relay messages to all its connected peers. The logging level is
 set to `info`.
 
-```./app.js 7575 10.1.0.1:7575 10.2.0.1:7575 10.3.0.1:7575 ...
+```
+./app.js 7575 10.1.0.1:7575 10.2.0.1:7575 10.3.0.1:7575 ...
 
 ```
 
