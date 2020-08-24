@@ -4,6 +4,16 @@ Mesh peer to peer JSON Pub/Sub with no extremal dependencies. Each peer can act 
 server and client, just a client or a simple relay peer. Topics can be
 subscribed to using a simple string or regex pattern.
 
+## Features
+
+* Mesh peer to peer network forwards messages to all connected, even if they are
+	not directly connected.
+* Peers can be added and removed on the fly.
+* PubSub topics can be subscribed using patter RegExp.
+* Peer to peer and pub/sub is 2 separate importable classes for even more
+	customization. 
+* **No dependences.**
+
 ## Install
 
 `npm install <Name Soon!> --save`
@@ -87,7 +97,7 @@ is passed in the `logLevel` Array, messages ill be printed to STDIN/STDERR.
 Passing `false` or leaving it blank will suppress all message except if the
 listening port is in use.
 
-### CLI usage
+## CLI usage
 
 A simple relay peer can be set up using just the CLI, no code required. This
 peer will only relay messages to all its connected peers. The logging level is
@@ -98,5 +108,49 @@ set to `info`.
 
 ```
 
-The first argument is the listen port, optionally followed by space separated
+The first argument is the listening port, optionally followed by space separated
 list of peers to connect with.
+
+## Methods and attributes
+
+Methods are provided by either the `P2P` or `PubSub` classes. The `P2PSub` class
+is a mix of both classes and merges the Pub/Sub with p2p functions.
+
+### Provided by `PubSub` class
+
+* `subscribe(topic, callback-function)` Sets a function to be called on `topic`
+	publish. A RegExp patter can be passed as the topic and will match to
+	`topic` on publish. a String will perform an exact match.
+
+* `publish(topic, JSON-body)` Executes each callback attached to the passed
+	`topic`. To prevent a publication from propagating across the network, pass
+	`__local = true` in the message body.
+
+* `topics` An instance attribute holding an Object on topics and bound callbacks.
+	This is not exposed by the `P2PSub` class.
+
+### Provided by `P2P`
+
+* `addPeer(peer)` Adds a remote peer to the local peers connections. `peer` can
+	passed as a single sting with a hostname and port, `'remotehost.com:7575'`,
+	or an Array of Strings with peers `['remotehost.com:7575', '10.10.2.1:7575']`.
+	Duplicate and existing peers will be ignored.
+
+* `removePeer(peer)` Disconnect the passed peer and removes it from the list of
+	peers this instances auto reconnects to. `peer` is passed as a single sting
+	with a hostname and port, `'remotehost.com:7575'`
+
+* `onData(callback)` Pass a listener to called when this peer receives a message
+	from the network. The message is passed to the callback as native JSON
+	object. This is not exposed by the `P2PSub` class, `subscribe` should be
+	used.
+
+* `broadcast(message, <excludes>)` Sends a JSON message to all connected peers.
+	`message` is JSON object that will be stringified. `excludes` is a Array of
+	Strings containing peerID's that this broadcast should not be sent you, and
+	is for internal use at this time. This is not exposed by the `P2PSub` class,
+	`publish` should be used.
+
+* `peerID` An instance attribute holding a String for the local `peerID`. This
+	is randomly generated and is for internal use. This is not exposed by the
+	`P2PSub` class.
