@@ -12,7 +12,7 @@ subscribed to using a simple string or regex pattern.
 * PubSub topics can be subscribed using patter RegExp.
 * Peer to peer and pub/sub is 2 separate importable classes for even more
 	customization. 
-* **No dependences.**
+* **No dependencies.**
 
 [![NPM](https://nodei.co/npm/p2psub.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/p2psub/)
 
@@ -85,8 +85,8 @@ p2p.subscribe(\.\, (data, topic)=> console.log(topic, data));
 
 ### P2PSub instance options
 
-All of these are provided, and passed to the `P2P` class. `PubSub` takes no
-instance variables.
+All of these are provided by, and passed to the `P2P` class. `PubSub` takes no
+instance options.
 
 `listenPort` Optional, type Number or String. Sets the incoming TCP port for the
 local peer to listen on. If this is left blank, the local peer will not accept
@@ -96,9 +96,9 @@ incoming peers. Default is `undefined`
 to connect with. Peers should be specified as `{host}:{port{}`. The host can be
 an IP or a hostname the system can resolve. Default is `[]`
 
-`logLevel`: Optional, type Array of Strings or `false`. Sets the how the
-instance log to STDIN out. Options are `info`, `warn` and `error` if one or more
-is passed in the `logLevel` Array, messages ill be printed to STDIN/STDERR.
+`logLevel`: Optional, type Array of Strings or `false`. Sets how the instance
+logs to STDIN out. Options are `info`, `warn` and `error` if one or more
+are passed in the `logLevel` Array, messages will be printed to STDIN/STDERR.
 Passing `false` or leaving it blank will suppress all message except if the
 listening port is in use.
 
@@ -127,7 +127,7 @@ The `P2PSub` class provides `subscribe()`, `publish()`, `addPeer()` and
 #### Provided by `PubSub` class
 
 * `subscribe(topic, callback-function)` Sets a function to be called on `topic`
-	publish. A RegExp patter can be passed as the topic and will match to
+	publish. A RegExp pattern can be passed as the topic and will match to
 	`topic` on publish. a String will perform an exact match. The message and
 	topic are passed to callback function as first and second argument.
 
@@ -141,9 +141,10 @@ The `P2PSub` class provides `subscribe()`, `publish()`, `addPeer()` and
 #### Provided by `P2P` class
 
 * `addPeer(peer)` Adds a remote peer to the local peers connections. `peer` can
-	passed as a single sting with a hostname and port, `'remotehost.com:7575'`,
-	or an Array of Strings with peers `['remotehost.com:7575', '10.10.2.1:7575']`.
-	Duplicate and existing peers will be ignored.
+	passed as a single string with a hostname and port, `'remotehost.com:7575'`,
+	or an Array of Strings with peers
+	`['remotehost.com:7575', '10.10.2.1:7575']`. Duplicate and existing peers
+	will be ignored.
 
 * `removePeer(peer)` Disconnect the passed peer and removes it from the list of
 	peers this instances auto reconnects to. `peer` is passed as a single sting
