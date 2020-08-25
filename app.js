@@ -28,19 +28,19 @@ class P2PSub{
 	}
 
 	subscribe(){
-		return this.subscribe.apply(this.pubsub, arguments);
+		return this.pubsub.subscribe.apply(this.pubsub, arguments);
 	}
 
 	publish(){
-		return this.publish.apply(this.pubsub, arguments);
+		return this.pubsub.publish.apply(this.pubsub, arguments);
 	}
 
 	addPeer(){
-		return this.addPeer.apply(this.p2p, arguments);
+		return this.p2p.addPeer.apply(this.p2p, arguments);
 	}
 
 	removePeer(){
-		return this.removePeer.apply(this.p2p, arguments);
+		return this.p2p.removePeer.apply(this.p2p, arguments);
 	}
 }
 
