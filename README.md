@@ -67,20 +67,20 @@ p2p.publish('resource-block-added', {id: '123', name:'block0'});
 ```
 // Remote peer
 
-p2p.subscribe(\^announcement\, (data)=> console.log(data.message));
+p2p.subscribe(\^announcement\, (data, topic)=> console.log(topic, data.message));
 
-# p2p pubsub is awesome!
-# Mesh is the future!
+# announcement p2p pubsub is awesome!
+# announcement-group1 Mesh is the future!
 ```
 
 ```
 // Another remote peer
 
-p2p.subscribe(\.\, (data)=> console.log(data));
+p2p.subscribe(\.\, (data, topic)=> console.log(topic, data));
 
-# {message: 'p2p pubsub is awesome!'}
-# {message: 'Mesh is the future!'}
-# {id: '123', name:'block0'}
+# announcement {message: 'p2p pubsub is awesome!'}
+# announcement-group1 {message: 'Mesh is the future!'}
+# resource-block-added {id: '123', name:'block0'}
 ```
 
 ### P2PSub instance options
@@ -128,7 +128,8 @@ The `P2PSub` class provides `subscribe()`, `publish()`, `addPeer()` and
 
 * `subscribe(topic, callback-function)` Sets a function to be called on `topic`
 	publish. A RegExp patter can be passed as the topic and will match to
-	`topic` on publish. a String will perform an exact match.
+	`topic` on publish. a String will perform an exact match. The message and
+	topic are passed to callback function as first and second argument.
 
 * `publish(topic, JSON-body)` Executes each callback attached to the passed
 	`topic`. To prevent a publication from propagating across the network, pass
