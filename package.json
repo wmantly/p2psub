@@ -1,6 +1,6 @@
 {
   "name": "p2psub",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Mesh peer to peer JSON Pub/Sub with no extremal dependencies. Each peer can act as server and client, just a client or a simple relay peer. Topics can be subscribed to using a simple string or regex pattern.",
   "main": "app.js",
   "author": [
