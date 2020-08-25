@@ -6,13 +6,13 @@ const {P2P} = require('./p2p');
 
 class P2PSub{
 	constructor(...args){
-		this.p2p = new P2P(...args);
+		let p2p = this.p2p = new P2P(...args);
 
-		this.pubsub = new PubSub();
+		let pubsub = this.pubsub = new PubSub();
 
 		this.pubsub.subscribe(/.*/gi, function(data, topic){
 			if(data.__local) return false;
-			this.p2p.broadcast({
+			p2p.broadcast({
 				type:'topic',
 				body:{
 					topic: topic,
@@ -22,8 +22,8 @@ class P2PSub{
 		});
 
 		this.p2p.onData(function(data){
-			data.__local = true;
-			if(data.type === 'topic') this.pubsub.publish(data.body.topic, data.body.data, true);
+			data.body.data.__local = true;
+			if(data.type === 'topic') pubsub.publish(data.body.topic, data.body.data);
 		});
 	}
 
@@ -47,7 +47,7 @@ class P2PSub{
 module.exports = {P2PSub, P2P, PubSub};
 
 
-if (require.main === module) {
+if (require.main === process.mainModule) {
     const args = process.argv.slice(1);
 
 	const exec_name = args[0].split('/').pop();
@@ -63,7 +63,7 @@ if (require.main === module) {
 
 	// console.log('port:', server_port, 'clients:', clients_list)
 
-	let instance = new P2PSub({
+	let instance = new P2P({
 		listenPort,
 		peers,
 		logLevel: ['info']

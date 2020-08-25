@@ -193,9 +193,12 @@ class P2P {
 
 		// Build a list of peers to send this message too
 		for(let _peerID in this.connectedPeers){
+			// console.log('broadcast peerID', _peerID , exclude.includes(_peerID))
 			if(exclude.includes(_peerID)) continue;
 			sentTo.push(_peerID);
 		}
+
+		// console.log('broadcastTo', sentTo, exclude, 'sentTo', sentTo)
 
 		// Attach a list of peers this message has been send to, including our
 		// peerID
@@ -234,7 +237,7 @@ class P2P {
 			return ;
 		}
 
-		this.__log('info', 'message', message);
+		this.__log('info', 'p2p message', message);
 
 		// forward the message to other peers
 		this.broadcast(message, message.sentTo);
