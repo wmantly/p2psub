@@ -80,6 +80,8 @@ class P2P {
 			port = parse[1];
 		}
 
+		let buffer ='';
+
 		let peer = new net.Socket().connect(port, address);
 		let p2p = this;
 
@@ -98,7 +100,13 @@ class P2P {
 		});
 
 		peer.on('data', function(data){
-			p2p.__read(JSON.parse(data.toString()), peer.remoteAddress, peer);
+			buffer += data.toString();
+			try{
+				p2p.__read(JSON.parse(buffer), peer.remoteAddress, peer);
+				buffer = '';
+			}catch(error){
+
+			}
 		});
 
 		peer.on('error', function(error){
@@ -142,6 +150,7 @@ class P2P {
 	__listen (port){
 
 		let p2p = this;
+		let buffer = '';
 
 		let serverSocket = new net.Server(function (clientSocket) {
 
@@ -160,7 +169,13 @@ class P2P {
 			clientSocket.write(JSON.stringify({type:"register", id: p2p.peerID}));
 
 			clientSocket.on('data', function(data){
-				p2p.__read(JSON.parse(data.toString()), clientSocket.remoteAddress, clientSocket);
+				buffer += data.toString();
+				try{
+					p2p.__read(JSON.parse(buffer), clientSocket.remoteAddress, clientSocket);
+					buffer = '';
+				}catch(error){
+					;
+				}
 			});
 
 			clientSocket.on('close', function(){
@@ -207,6 +222,7 @@ class P2P {
 
 		// Send the message to the connected peers in the `sentTo` list.
 		for(let _peerID of sentTo){
+
 			this.connectedPeers[_peerID].write(JSON.stringify(message));
 		}
 	}

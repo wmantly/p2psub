@@ -68,5 +68,9 @@ if (require.main === process.mainModule) {
 		peers,
 		logLevel: ['info']
 	});
+
+	setTimeout(function(instance){
+		instance.broadcast({type: 'topic', body:{topic: 'test', data:{message: 'this test'}}})
+	}, 3000, instance)
 }
 
