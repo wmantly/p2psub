@@ -25,7 +25,7 @@ subscribed to using a simple string or regex pattern.
 
 Instantiate a `P2PSub` instance:
 
-```
+```javascript
 const {P2PSub} = require('p2psub');
 
 const p2p = new P2PSub({
@@ -40,13 +40,13 @@ const p2p = new P2PSub({
 
 Now we can listen for and publish topics across the whole network:
 
-```
+```javascript
 // Local peer
 
 p2p.publish('announcement', {message: 'p2p pubsub is awesome!'});
 ```
 
-```
+```javascript
 // Remote peer
 
 p2p.subscribe('announcement', (data)=> console.log(data.message));
@@ -56,7 +56,7 @@ p2p.subscribe('announcement', (data)=> console.log(data.message));
 
 We can also use regex patterns in our subscribes to catch more, or all topics:
 
-```
+```javascript
 // Local peer
 
 p2p.publish('announcement', {message: 'p2p pubsub is awesome!'});
@@ -64,7 +64,7 @@ p2p.publish('announcement-group1', {message: 'Mesh is the future!'});
 p2p.publish('resource-block-added', {id: '123', name:'block0'});
 ```
 
-```
+```javascript
 // Remote peer
 
 p2p.subscribe(\^announcement\, (data, topic)=> console.log(topic, data.message));
@@ -73,7 +73,7 @@ p2p.subscribe(\^announcement\, (data, topic)=> console.log(topic, data.message))
 # announcement-group1 Mesh is the future!
 ```
 
-```
+```javascript
 // Another remote peer
 
 p2p.subscribe(\.\, (data, topic)=> console.log(topic, data));
@@ -110,7 +110,7 @@ from leaving the local node. This is only used on `P2PSub` class instances.
 
 Example of striping data from a message:
 
-```
+```javascript
 const p2p = new P2PSub({
 	listenPort: 7575,
 	preBroadcast: function(data, topic){
@@ -130,7 +130,7 @@ A simple relay peer can be set up using just the CLI, no code required. This
 peer will only relay messages to all its connected peers. The logging level is
 set to `info`.
 
-```
+```bash
 ./app.js 7575 10.1.0.1:7575 10.2.0.1:7575 10.3.0.1:7575 ...
 
 ```
