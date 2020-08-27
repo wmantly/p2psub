@@ -102,6 +102,28 @@ are passed in the `logLevel` Array, messages will be printed to STDIN/STDERR.
 Passing `false` or leaving it blank will suppress all message except if the
 listening port is in use.
 
+`preBroadcast(data, topic)`: Optional function to be ran before a topic is
+published across the network. The message body Object is passed as the first
+argument and the topic as the second. Return the Object to be broadcasted across
+the network or `false` to prevent propagation. This is useful to prevent data
+from leaving the local node. This is only used on `P2PSub` class instances.
+
+Example of striping data from a message:
+
+```
+const p2p = new P2PSub({
+	listenPort: 7575,
+	preBroadcast: function(data, topic){
+		let thisData = {...data} // copy the object or all local subscriptions will lose the data too
+		delete this.data.sensitiveInformation;
+
+		return thisData
+	}
+});
+
+
+``` 
+
 ## CLI usage
 
 A simple relay peer can be set up using just the CLI, no code required. This
@@ -131,7 +153,7 @@ The `P2PSub` class provides `subscribe()`, `publish()`, `addPeer()` and
 	`topic` on publish. a String will perform an exact match. The message and
 	topic are passed to callback function as first and second argument.
 
-* `publish(topic, JSON-body)` Executes each callback attached to the passed
+* `publish(topic, Object-body)` Executes each callback attached to the passed
 	`topic`. To prevent a publication from propagating across the network, pass
 	`__local = true` in the message body.
 

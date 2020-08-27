@@ -10,13 +10,17 @@ class P2PSub{
 
 		let pubsub = this.pubsub = new PubSub();
 
+		let preBroadcast = this.preBroadcast = args[0].preBroadcast || function(data){return data};
+
 		this.pubsub.subscribe(/.*/gi, function(data, topic){
 			if(data.__local) return false;
-			p2p.broadcast({
+			let body = preBroadcast(data, topic);
+			
+			if(body) p2p.broadcast({
 				type:'topic',
 				body:{
 					topic: topic,
-					data: data
+					data: body
 				}
 			});
 		});
@@ -68,9 +72,4 @@ if (require.main === process.mainModule) {
 		peers,
 		logLevel: ['info']
 	});
-
-	setTimeout(function(instance){
-		instance.broadcast({type: 'topic', body:{topic: 'test', data:{message: 'this test'}}})
-	}, 3000, instance)
 }
-
