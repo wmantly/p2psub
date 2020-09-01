@@ -38,7 +38,7 @@ class P2P {
 	}
 
 	__log(type, ...message){
-		if(this.logLevel || this.logLevel === 'all' || this.logLevel.includes(type)){
+		if(this.logLevel === 'all' || this.logLevel.includes(type)){
 			console[type](...message);
 		}
 	}
