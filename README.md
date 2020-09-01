@@ -32,7 +32,7 @@ const p2p = new P2PSub({
 	listenPort: 7575,
 	peers:[
 		'10.10.10.11:7575',
-		'10.10.10.11:7575',
+		'10.10.10.12:7575',
 		'172.16.24.2:8637'
 	]
 });
@@ -186,6 +186,11 @@ The `P2PSub` class provides `subscribe()`, `publish()`, `addPeer()` and
 * `peerID` An instance attribute holding a String for the local `peerID`. This
 	is randomly generated and is for internal use. This is not exposed by the
 	`P2PSub` class.
+
+## Notes
+
+This project is in active development. Please report any issue and ask for new
+features. PR's are also welcomed.
 
 ## Todo
 
