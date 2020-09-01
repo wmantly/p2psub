@@ -64,7 +64,7 @@ class P2P {
 
 			// find the peer in the `connectedPeers` object
 			for(let peerID in this.connectedPeers){
-				if(this.connectedPeers[peerID].peerConnectAddress !== peer) continue;
+				if(this.connectedPeers[peerID].peerConnectAddress  !== peer) continue;
 
 				this.connectedPeers[peerID].end();
 				delete this.connectedPeers[peerID];
@@ -88,6 +88,7 @@ class P2P {
 		peer.on('connect', function(){
 			p2p.__log('info', `Peer ${address} is now connected.`);
 			peer.peerConnectAddress = `${address}:${port}`
+			peer.isClient = true;
 
 			// When a connection is started, send a message informing the remote
 			// peer of our ID
@@ -130,16 +131,19 @@ class P2P {
 			for(let peerID in p2p.connectedPeers){
 				let peer = p2p.connectedPeers[peerID];
 
-				// If the peer does not a `peerConnactAddress`, it 
+				// If the peer does not a `peerConnectAddress`, it 
 				if(! peer.peerConnectAddress) continue;
 
 				// Remove connected peers from the list
 				tryConnectionSet.delete(peer.peerConnectAddress);
 
 				// Every once and while send a heart beat keep the socket open.
-				if((p2p.count % 10) == 0) peer.write(JSON.stringify({type:"heartbeat"}));
+				if(peer.isClient && (p2p.count % 10) == 0){
+					peer.write(JSON.stringify({type:"heartbeat"}));
+				}
 			}
 
+			p2p.count++
 			// loop over the unconnected peers, and try to connect to them.
 			for(let peer of tryConnectionSet){
 				p2p.__connectPeer(peer);
@@ -203,8 +207,8 @@ class P2P {
 	}
 
 	broadcast(message, exclude){
-		exclude = [...exclude || [], ...[this.peerID]]
-		let sentTo = []
+		exclude = [...exclude || [], ...[this.peerID]];
+		let sentTo = [];
 
 		// Build a list of peers to send this message too
 		for(let _peerID in this.connectedPeers){
@@ -229,6 +233,7 @@ class P2P {
 
 	__read(message, from, socket){
 		// Parse an incoming message
+		this.__log('info', 'p2p message', message);
 
 		// Drop heart beats
 		if(message.type === "heartbeat"){
@@ -242,6 +247,10 @@ class P2P {
 			this.__log('info', 'registering peer', message.id, socket.remoteAddress)
 
 			if(Object.keys(this.connectedPeers).includes(message.id)){
+
+				if(socket.peerConnectAddress){
+					this.connectedPeers[message.id].peerConnectAddress = socket.peerConnectAddress
+				}
 				this.__log('info', `Dropping ${message.id}, already connected`)
 				socket.end();
 			}else{
@@ -252,8 +261,6 @@ class P2P {
 			}
 			return ;
 		}
-
-		this.__log('info', 'p2p message', message);
 
 		// forward the message to other peers
 		this.broadcast(message, message.sentTo);
