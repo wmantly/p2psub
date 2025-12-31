@@ -112,7 +112,7 @@ class P2P {
 
 		peer.on('error', function(error){
 			if(error.syscall === 'connect' && error.code === 'ECONNREFUSED'){
-				p2p.__log('info', `Peer ${error.address}:${error.port} connection refussed!`);
+				p2p.__log('info', `Peer ${error.address}:${error.port} connection refused!`);
 			}else{
 				p2p.__log('warn', 'client EVENT error:', arguments);
 			}
@@ -159,14 +159,14 @@ class P2P {
 		let serverSocket = new net.Server(function (clientSocket) {
 
 			clientSocket.on('error', function(){
-				console.log('server-client EVENT error:', arguments);
+				p2p.__log('error', 'server-client EVENT error:', arguments);
 			});
 
 		});
 
 		serverSocket.on('connection', function(clientSocket){
 
-			console.log('server EVENT connection from client:', clientSocket.remoteAddress);
+			p2p.__log('info', 'server EVENT connection from client:', clientSocket.remoteAddress);
 
 			// When a connection is started, send a message informing the remote
 			// peer of our ID
