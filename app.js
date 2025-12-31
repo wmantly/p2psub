@@ -51,7 +51,7 @@ class P2PSub{
 module.exports = {P2PSub, P2P, PubSub};
 
 
-if (require.main === process.mainModule) {
+if (require.main === module) {
     const args = process.argv.slice(1);
 
 	const exec_name = args[0].split('/').pop();

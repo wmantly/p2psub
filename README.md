@@ -1,24 +1,22 @@
-# NPM p2psub
+# p2psub
 
-Mesh peer to peer JSON Pub/Sub with no extremal dependencies. Each peer can act as
-server and client, just a client or a simple relay peer. Topics can be
-subscribed to using a simple string or regex pattern.
+Mesh peer-to-peer JSON Pub/Sub with no external dependencies. Each peer can act as a server and client, just a client, or a simple relay peer. Topics can be subscribed to using a simple string or regex pattern.
 
 ## Features
 
-* Mesh peer to peer network forwards messages to all connected, even if they are
-	not directly connected.
-* Peers can be added and removed on the fly.
-* PubSub topics can be subscribed using patter RegExp.
-* Peer to peer and pub/sub is 2 separate importable classes for even more
-	customization. 
-* **No dependencies.**
+* Mesh peer-to-peer network forwards messages to all connected peers, even if they are not directly connected
+* Peers can be added and removed on the fly
+* PubSub topics can be subscribed using RegExp patterns
+* Peer-to-peer and pub/sub are two separate importable classes for maximum customization
+* **Zero runtime dependencies**
 
 [![NPM](https://nodei.co/npm/p2psub.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/p2psub/)
 
-## Install
+## Installation
 
-`npm install p2psub --save`
+```bash
+npm install p2psub
+```
 
 
 ## Usage
@@ -67,7 +65,7 @@ p2p.publish('resource-block-added', {id: '123', name:'block0'});
 ```javascript
 // Remote peer
 
-p2p.subscribe(\^announcement\, (data, topic)=> console.log(topic, data.message));
+p2p.subscribe(/^announcement/, (data, topic)=> console.log(topic, data.message));
 
 # announcement p2p pubsub is awesome!
 # announcement-group1 Mesh is the future!
@@ -76,46 +74,50 @@ p2p.subscribe(\^announcement\, (data, topic)=> console.log(topic, data.message))
 ```javascript
 // Another remote peer
 
-p2p.subscribe(\.\, (data, topic)=> console.log(topic, data));
+p2p.subscribe(/./, (data, topic)=> console.log(topic, data));
 
 # announcement {message: 'p2p pubsub is awesome!'}
 # announcement-group1 {message: 'Mesh is the future!'}
 # resource-block-added {id: '123', name:'block0'}
 ```
 
-### P2PSub instance options
+### P2PSub Instance Options
 
-All of these are provided by, and passed to the `P2P` class. `PubSub` takes no
-instance options.
+All options are provided by and passed to the `P2P` class. The `PubSub` class takes no instance options.
 
-`listenPort` Optional, type Number or String. Sets the incoming TCP port for the
-local peer to listen on. If this is left blank, the local peer will not accept
-incoming peers. Default is `undefined`
+**`listenPort`** (Number or String, optional)
+- Sets the incoming TCP port for the local peer to listen on
+- If omitted, the local peer will not accept incoming connections
+- Default: `undefined`
 
-`peers`: Optional, type Array of Strings. The list of peers this peer will try
-to connect with. Peers should be specified as `{host}:{port{}`. The host can be
-an IP or a hostname the system can resolve. Default is `[]`
+**`peers`** (Array of Strings, optional)
+- List of peers this peer will attempt to connect with
+- Peers should be specified as `{host}:{port}`
+- The host can be an IP address or a hostname the system can resolve
+- Default: `[]`
 
-`logLevel`: Optional, type Array of Strings or `false`. Sets how the instance
-logs to STDIN out. Options are `info`, `warn` and `error` if one or more
-are passed in the `logLevel` Array, messages will be printed to STDIN/STDERR.
-Passing `false` or leaving it blank will suppress all message except if the
-listening port is in use.
+**`logLevel`** (Array of Strings or `false`, optional)
+- Controls logging output to STDOUT/STDERR
+- Options: `'info'`, `'warn'`, `'error'`
+- Messages will be printed if their level is included in the array
+- Set to `false` or leave blank to suppress all messages except critical errors (e.g., port already in use)
+- Default: `[]`
 
-`preBroadcast(data, topic)`: Optional function to be ran before a topic is
-published across the network. The message body Object is passed as the first
-argument and the topic as the second. Return the Object to be broadcasted across
-the network or `false` to prevent propagation. This is useful to prevent data
-from leaving the local node. This is only used on `P2PSub` class instances.
+**`preBroadcast(data, topic)`** (Function, optional)
+- Function called before a topic is published across the network
+- Receives the message body Object as the first argument and the topic as the second
+- Return the Object to be broadcast across the network, or `false` to prevent propagation
+- Useful for filtering sensitive data before network transmission
+- Only used on `P2PSub` class instances
 
-Example of striping data from a message:
+Example of stripping data from a message:
 
 ```javascript
 const p2p = new P2PSub({
 	listenPort: 7575,
 	preBroadcast: function(data, topic){
 		let thisData = {...data} // copy the object or all local subscriptions will lose the data too
-		delete this.data.sensitiveInformation;
+		delete thisData.sensitiveInformation;
 
 		return thisData
 	}
@@ -124,79 +126,85 @@ const p2p = new P2PSub({
 
 ``` 
 
-## CLI usage
+## CLI Usage
 
-A simple relay peer can be set up using just the CLI, no code required. This
-peer will only relay messages to all its connected peers. The logging level is
-set to `info`.
+A simple relay peer can be set up using just the CLI, no code required. This peer will only relay messages to all its connected peers. The logging level is automatically set to `info`.
 
 ```bash
 ./app.js 7575 10.1.0.1:7575 10.2.0.1:7575 10.3.0.1:7575 ...
-
 ```
 
-The first argument is the listening port, optionally followed by space separated
-list of peers to connect with.
+The first argument is the listening port, optionally followed by a space-separated list of peers to connect with.
 
-## Methods and attributes
+## API Reference
 
-Methods are provided by either the `P2P` or `PubSub` classes. The `P2PSub` class
-is a mix of both classes and merges the Pub/Sub with p2p functions.
+Methods are provided by either the `P2P` or `PubSub` classes. The `P2PSub` class combines both and exposes `subscribe()`, `publish()`, `addPeer()`, and `removePeer()`.
 
-The `P2PSub` class provides `subscribe()`, `publish()`, `addPeer()` and
-`removePeer()`. Please see the methods below for detailed usage.
+### PubSub Class Methods
 
-#### Provided by `PubSub` class
+**`subscribe(topic, callback)`**
+- Sets a callback function to be called when `topic` is published
+- `topic` can be a String (exact match) or RegExp (pattern match)
+- Callback receives `(data, topic)` as arguments
+- Returns: void
 
-* `subscribe(topic, callback-function)` Sets a function to be called on `topic`
-	publish. A RegExp pattern can be passed as the topic and will match to
-	`topic` on publish. a String will perform an exact match. The message and
-	topic are passed to callback function as first and second argument.
+**`publish(topic, data)`**
+- Executes all callbacks subscribed to the given `topic`
+- To prevent propagation across the network, set `__local = true` in the data object
+- Returns: void
 
-* `publish(topic, Object-body)` Executes each callback attached to the passed
-	`topic`. To prevent a publication from propagating across the network, pass
-	`__local = true` in the message body.
+**`topics`** (Object)
+- Instance attribute holding all topics and their bound callbacks
+- Not exposed by the `P2PSub` class
 
-* `topics` An instance attribute holding an Object on topics and bound callbacks.
-	This is not exposed by the `P2PSub` class.
+### P2P Class Methods
 
-#### Provided by `P2P` class
+**`addPeer(peer)`**
+- Adds a remote peer to the local peer's connections
+- `peer` can be a single String (`'remotehost.com:7575'`) or an Array of Strings
+- Duplicate and already-connected peers are ignored
+- Returns: void
 
-* `addPeer(peer)` Adds a remote peer to the local peers connections. `peer` can
-	passed as a single string with a hostname and port, `'remotehost.com:7575'`,
-	or an Array of Strings with peers
-	`['remotehost.com:7575', '10.10.2.1:7575']`. Duplicate and existing peers
-	will be ignored.
+**`removePeer(peer)`**
+- Disconnects the specified peer and removes it from the auto-reconnect list
+- `peer` is a String with hostname and port (`'remotehost.com:7575'`)
+- Returns: void
 
-* `removePeer(peer)` Disconnect the passed peer and removes it from the list of
-	peers this instances auto reconnects to. `peer` is passed as a single sting
-	with a hostname and port, `'remotehost.com:7575'`
+**`onData(callback)`**
+- Registers a listener to be called when this peer receives a message
+- The message is passed to the callback as a parsed JSON object
+- Not exposed by the `P2PSub` class (use `subscribe` instead)
+- Returns: void
 
-* `onData(callback)` Pass a listener to called when this peer receives a message
-	from the network. The message is passed to the callback as native JSON
-	object. This is not exposed by the `P2PSub` class, `subscribe` should be
-	used.
+**`broadcast(message, [excludes])`**
+- Sends a JSON message to all connected peers
+- `message` is a JSON object that will be stringified
+- `excludes` (optional) is an Array of peerIDs to skip (for internal use)
+- Not exposed by the `P2PSub` class (use `publish` instead)
+- Returns: void
 
-* `broadcast(message, <excludes>)` Sends a JSON message to all connected peers.
-	`message` is JSON object that will be stringified. `excludes` is a Array of
-	Strings containing peerID's that this broadcast should not be sent you, and
-	is for internal use at this time. This is not exposed by the `P2PSub` class,
-	`publish` should be used.
+**`peerID`** (String)
+- Randomly generated unique identifier for the local peer
+- For internal use only
+- Not exposed by the `P2PSub` class
 
-* `peerID` An instance attribute holding a String for the local `peerID`. This
-	is randomly generated and is for internal use. This is not exposed by the
-	`P2PSub` class.
+## Testing
 
-## Notes
+Run the test suite using Node.js built-in test runner:
 
-This project is in active development. Please report any issue and ask for new
-features. PR's are also welcomed.
+```bash
+npm test
+```
 
-## Todo
+Tests cover:
+- PubSub functionality (subscriptions, publications, regex patterns)
+- P2P networking (connections, message forwarding, peer management)
+- P2PSub integration (cross-network pub/sub, filtering, preBroadcast hooks)
 
-* Add timestamps to each message.
-* Change the parsing of the message move `sentTo` in the prototype before
-	passing the class.
-* Add optional TSL
-* Internal ability to publish new peers across the network.
-* Add config file for CLI mode.
+## Contributing
+
+This project is in active development. Please report issues and request features via GitHub Issues. Pull requests are welcome.
+
+## License
+
+MIT
