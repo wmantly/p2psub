@@ -21,6 +21,32 @@ npm install p2psub
 
 ## Usage
 
+### Standalone PubSub (No P2P Networking)
+
+For simple in-process pub/sub without networking, you can use the `PubSub` class directly. A singleton instance `ps` is provided for convenience:
+
+```javascript
+const {ps} = require('p2psub');
+
+// Subscribe to topics
+ps.subscribe('my-topic', (data) => console.log('Received:', data));
+
+// Publish to topics
+ps.publish('my-topic', {message: 'Hello World'});
+```
+
+Alternatively, create your own isolated PubSub instance:
+
+```javascript
+const {PubSub} = require('p2psub');
+
+const myPubSub = new PubSub();
+myPubSub.subscribe('topic', callback);
+myPubSub.publish('topic', data);
+```
+
+### P2PSub (Combined P2P + PubSub)
+
 Instantiate a `P2PSub` instance:
 
 ```javascript
@@ -137,6 +163,13 @@ A simple relay peer can be set up using just the CLI, no code required. This pee
 The first argument is the listening port, optionally followed by a space-separated list of peers to connect with.
 
 ## API Reference
+
+### Exports
+
+**`P2PSub`** - Combined P2P + PubSub class
+**`P2P`** - Peer-to-peer networking class
+**`PubSub`** - Standalone pub/sub class
+**`ps`** - Singleton PubSub instance for convenience
 
 Methods are provided by either the `P2P` or `PubSub` classes. The `P2PSub` class combines both and exposes `subscribe()`, `publish()`, `addPeer()`, and `removePeer()`.
 
