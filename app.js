@@ -3,6 +3,7 @@
 const {PubSub} = require('./pubsub');
 const {P2P} = require('./p2p');
 
+const ps = new PubSub();
 
 class P2PSub{
 	constructor(...args){
@@ -48,7 +49,7 @@ class P2PSub{
 	}
 }
 
-module.exports = {P2PSub, P2P, PubSub};
+module.exports = {P2PSub, P2P, PubSub, ps};
 
 
 if (require.main === module) {

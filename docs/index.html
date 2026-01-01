@@ -191,7 +191,28 @@
             <a href="https://github.com/wmantly/p2psub" class="install-btn">View on GitHub</a>
 
             <h2>Quick Start</h2>
-            <p>Create a P2PSub instance and start publishing and subscribing:</p>
+
+            <h3>Standalone PubSub (No Networking)</h3>
+            <p>For simple in-process pub/sub without P2P networking, use the singleton <code>ps</code> instance:</p>
+            <pre><code>const {ps} = require('p2psub');
+
+// Subscribe to topics
+ps.subscribe('my-topic', (data) => {
+    console.log('Received:', data);
+});
+
+// Publish to topics
+ps.publish('my-topic', {message: 'Hello World'});</code></pre>
+
+            <p>Or create your own isolated PubSub instance:</p>
+            <pre><code>const {PubSub} = require('p2psub');
+
+const myPubSub = new PubSub();
+myPubSub.subscribe('topic', callback);
+myPubSub.publish('topic', data);</code></pre>
+
+            <h3>P2PSub (With Mesh Networking)</h3>
+            <p>Create a P2PSub instance and start publishing and subscribing across the network:</p>
             <pre><code>const {P2PSub} = require('p2psub');
 
 const p2p = new P2PSub({
@@ -258,6 +279,24 @@ p2p.subscribe(/./, (data, topic) => {
             </div>
 
             <h2>API Reference</h2>
+
+            <h3>Module Exports</h3>
+            <div class="api-method">
+                <code>P2PSub</code>
+                <p>Combined P2P + PubSub class for mesh network pub/sub</p>
+            </div>
+            <div class="api-method">
+                <code>P2P</code>
+                <p>Standalone peer-to-peer networking class</p>
+            </div>
+            <div class="api-method">
+                <code>PubSub</code>
+                <p>Standalone pub/sub class (no networking)</p>
+            </div>
+            <div class="api-method">
+                <code>ps</code>
+                <p>Singleton PubSub instance for convenience - ready to use without instantiation</p>
+            </div>
 
             <h3>P2PSub Methods</h3>
             <div class="api-method">
