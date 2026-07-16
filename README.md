@@ -7,6 +7,9 @@ Mesh peer-to-peer JSON Pub/Sub with no external dependencies. Each peer can act 
 * Mesh peer-to-peer network forwards messages to all connected peers, even if they are not directly connected
 * Peers can be added and removed on the fly
 * PubSub topics can be subscribed using RegExp patterns
+* `publish()` returns a Promise and supports `async` listeners — `await p2p.publish(...)`
+* Subscribe callbacks receive the originating peer, so misbehaving peers can be identified and ignored
+* `subscribe()` returns an unsubscribe handle for easy cleanup
 * Peer-to-peer and pub/sub are two separate importable classes for maximum customization
 * **Zero runtime dependencies**
 
@@ -28,11 +31,32 @@ For simple in-process pub/sub without networking, you can use the `PubSub` class
 ```javascript
 const {ps} = require('p2psub');
 
-// Subscribe to topics
-ps.subscribe('my-topic', (data) => console.log('Received:', data));
+// Subscribe to topics. subscribe() returns an unsubscribe handle.
+const unsub = ps.subscribe('my-topic', (data, topic) => {
+	console.log('Received:', topic, data);
+});
 
-// Publish to topics
+// Publish to topics. publish() returns a Promise that resolves once all
+// matching listeners (including async ones) have settled.
 ps.publish('my-topic', {message: 'Hello World'});
+
+// Later, stop listening:
+unsub();
+```
+
+Listeners may be async — `publish()` awaits any Promise they return:
+
+```javascript
+const {PubSub} = require('p2psub');
+
+const myPubSub = new PubSub();
+
+myPubSub.subscribe('topic', async (data) => {
+	await doAsyncWork(data);
+});
+
+// Resolves only after the async listener above has finished.
+await myPubSub.publish('topic', data);
 ```
 
 Alternatively, create your own isolated PubSub instance:
@@ -107,6 +131,31 @@ p2p.subscribe(/./, (data, topic)=> console.log(topic, data));
 # resource-block-added {id: '123', name:'block0'}
 ```
 
+### Identifying the Originating Peer
+
+When used through `P2PSub`, subscribe callbacks receive a third argument — the
+originating peer's ID — so you can attribute messages and ignore or kick
+misbehaving peers:
+
+```javascript
+const p2p = new P2PSub({listenPort: 7575, peers: ['10.10.10.11:7575']});
+
+const badPeers = new Set();
+
+p2p.subscribe(/.*/, (data, topic, from) => {
+	if(badPeers.has(from)) return; // ignore messages from banned peers
+
+	console.log(`message on '${topic}' from peer ${from}`);
+});
+
+// Ban a flooding peer and drop its connection:
+// p2p.removePeer('10.10.10.99:7575');
+```
+
+Locally published messages are attributed to the local peer (`p2p.p2p.peerID`),
+so a subscriber can tell local and remote messages apart by comparing `from`
+against the local peer ID.
+
 ### P2PSub Instance Options
 
 All options are provided by and passed to the `P2P` class. The `PubSub` class takes no instance options.
@@ -128,6 +177,12 @@ All options are provided by and passed to the `P2P` class. The `PubSub` class ta
 - Messages will be printed if their level is included in the array
 - Set to `false` or leave blank to suppress all messages except critical errors (e.g., port already in use)
 - Default: `[]`
+
+**`connectInterval`** (Number, optional)
+- How often, in milliseconds, to attempt connections to unconnected wanted peers and send heartbeats
+- The reconnection timer is `unref`'d, so it does not keep the process alive on its own (a listening server or your own code will)
+- Mainly useful for shortening the interval in tests
+- Default: `1000`
 
 **`preBroadcast(data, topic)`** (Function, optional)
 - Function called before a topic is published across the network
@@ -171,20 +226,22 @@ The first argument is the listening port, optionally followed by a space-separat
 **`PubSub`** - Standalone pub/sub class
 **`ps`** - Singleton PubSub instance for convenience
 
-Methods are provided by either the `P2P` or `PubSub` classes. The `P2PSub` class combines both and exposes `subscribe()`, `publish()`, `addPeer()`, and `removePeer()`.
+Methods are provided by either the `P2P` or `PubSub` classes. The `P2PSub` class combines both and exposes `subscribe()`, `publish()`, `addPeer()`, `removePeer()`, and `destroy()`.
 
 ### PubSub Class Methods
 
 **`subscribe(topic, callback)`**
 - Sets a callback function to be called when `topic` is published
 - `topic` can be a String (exact match) or RegExp (pattern match)
-- Callback receives `(data, topic)` as arguments
-- Returns: void
+- Callback receives `(data, topic, from)` as arguments, where `from` is the originating peer ID when used through `P2PSub` (otherwise `undefined`)
+- Returns: an `unsubscribe` Function — call it to remove the callback
 
-**`publish(topic, data)`**
+**`publish(topic, data, [from])`**
 - Executes all callbacks subscribed to the given `topic`
+- Returns a Promise that resolves once every matching listener has settled. Async listeners (those returning a Promise) are awaited
+- `from` is an opaque origin identifier forwarded to listeners; `P2PSub.publish` sets it to the local peer ID automatically
 - To prevent propagation across the network, set `__local = true` in the data object
-- Returns: void
+- Returns: Promise (resolves to `undefined`)
 
 **`topics`** (Object)
 - Instance attribute holding all topics and their bound callbacks
@@ -216,6 +273,11 @@ Methods are provided by either the `P2P` or `PubSub` classes. The `P2PSub` class
 - Not exposed by the `P2PSub` class (use `publish` instead)
 - Returns: void
 
+**`destroy()`**
+- Stops the reconnection timer, closes the listening server, and destroys every active peer socket
+- Available on both the `P2P` and `P2PSub` classes; safe to call more than once
+- Returns: void
+
 **`peerID`** (String)
 - Randomly generated unique identifier for the local peer
 - For internal use only
@@ -230,9 +292,9 @@ npm test
 ```
 
 Tests cover:
-- PubSub functionality (subscriptions, publications, regex patterns)
-- P2P networking (connections, message forwarding, peer management)
-- P2PSub integration (cross-network pub/sub, filtering, preBroadcast hooks)
+- PubSub functionality (subscriptions, publications, regex patterns, async `publish`, unsubscribe handles)
+- P2P networking (connections, message forwarding, peer management, message framing, lifecycle/`destroy`)
+- P2PSub integration (cross-network pub/sub, filtering, preBroadcast hooks, peer attribution)
 
 ## Contributing
 

@@ -114,21 +114,23 @@ describe('P2PSub', () => {
 
 	describe('Integration tests', () => {
 		let peer1, peer2;
+		let created = [];
 
 		after(() => {
-			if (peer1) {
-				clearInterval(peer1.p2p.connectInterval);
-				if (peer1.p2p.server) peer1.p2p.server.close();
-			}
-			if (peer2) {
-				clearInterval(peer2.p2p.connectInterval);
-				if (peer2.p2p.server) peer2.p2p.server.close();
-			}
+			for (const peer of created) peer.destroy();
+			created = [];
 		});
 
+		function track(...peers) {
+			created.push(...peers);
+			return peers;
+		}
+
 		test('should publish across network', (t, done) => {
-			peer1 = new P2PSub({listenPort: 18001, logLevel: []});
-			peer2 = new P2PSub({listenPort: 18002, peers: ['localhost:18001'], logLevel: []});
+			[peer1, peer2] = track(
+				new P2PSub({listenPort: 18001, logLevel: [], connectInterval: 50}),
+				new P2PSub({listenPort: 18002, peers: ['localhost:18001'], logLevel: [], connectInterval: 50})
+			);
 
 			peer1.subscribe('network-test', (data, topic) => {
 				assert.strictEqual(topic, 'network-test');
@@ -142,8 +144,10 @@ describe('P2PSub', () => {
 		});
 
 		test('should work with regex subscriptions across network', (t, done) => {
-			peer1 = new P2PSub({listenPort: 18003, logLevel: []});
-			peer2 = new P2PSub({listenPort: 18004, peers: ['localhost:18003'], logLevel: []});
+			[peer1, peer2] = track(
+				new P2PSub({listenPort: 18003, logLevel: [], connectInterval: 50}),
+				new P2PSub({listenPort: 18004, peers: ['localhost:18003'], logLevel: [], connectInterval: 50})
+			);
 
 			peer1.subscribe(/^announcement/, (data, topic) => {
 				if (topic === 'announcement-test') {
@@ -169,5 +173,53 @@ describe('P2PSub', () => {
 		p2psub.addPeer('192.168.1.1:7575');
 		p2psub.removePeer('192.168.1.1:7575');
 		assert.ok(!p2psub.p2p.wantedPeers.has('192.168.1.1:7575'));
+	});
+
+	test('should attribute locally published messages to the local peer', (t, done) => {
+		const p2psub = new P2PSub({});
+
+		p2psub.subscribe('local-origin', (data, topic, from) => {
+			assert.strictEqual(topic, 'local-origin');
+			assert.strictEqual(from, p2psub.p2p.peerID);
+			done();
+		});
+
+		p2psub.publish('local-origin', {msg: 'mine'});
+	});
+
+	test('should expose destroy() that tears down the p2p layer', (t, done) => {
+		const p2psub = new P2PSub({listenPort: 18005, logLevel: []});
+		assert.ok(p2psub.p2p.server);
+		p2psub.destroy();
+		assert.strictEqual(p2psub.p2p.server, null);
+		assert.strictEqual(p2psub.p2p.connectInterval._destroyed, true);
+		done();
+	});
+
+	describe('Peer attribution across network', () => {
+		let peer1, peer2;
+		let created = [];
+
+		after(() => {
+			for (const peer of created) peer.destroy();
+			created = [];
+		});
+
+		test('subscribe callback receives the originating peer id', (t, done) => {
+			peer1 = new P2PSub({listenPort: 18006, logLevel: [], connectInterval: 50});
+			peer2 = new P2PSub({listenPort: 18007, peers: ['localhost:18006'], logLevel: [], connectInterval: 50});
+			created.push(peer1, peer2);
+
+			peer1.subscribe('who', (data, topic, from) => {
+				// The message originated on peer2, so `from` is peer2's id.
+				assert.strictEqual(from, peer2.p2p.peerID);
+				assert.strictEqual(data.msg, 'hello');
+				done();
+			});
+
+			setTimeout(() => {
+				peer2.publish('who', {msg: 'hello'});
+			}, 500);
+		});
 	});
 });

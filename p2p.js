@@ -14,8 +14,10 @@ class P2P {
 		// Random ID for this peer
 		this.peerID = crypto.randomBytes(16).toString("hex");
 
-		// Kick of the interval to connect to peers and send hear beats
-		this.connectInterval = this.__peerInterval();
+		// Kick of the interval to connect to peers and send hear beats.
+		// The interval length (ms) may be overridden via `args.connectInterval`,
+		// which is mainly useful for tests; the default is 1000ms.
+		this.connectInterval = this.__peerInterval(args.connectInterval);
 
 		// Hold the data callbacks when a message is received 
 		this.onDataCallbacks = [];
@@ -41,6 +43,13 @@ class P2P {
 		if(this.logLevel === 'all' || this.logLevel.includes(type)){
 			console[type](...message);
 		}
+	}
+
+	// Serialize a message and write it to a socket. Messages are newline
+	// delimited so that multiple messages arriving in a single TCP segment
+	// can be cleanly split back out on the receiving side.
+	__send(socket, message){
+		socket.write(JSON.stringify(message) + '\n');
 	}
 
 	// Take a peer as <host>:<port> and add it the `wantedPeers` list
@@ -92,21 +101,30 @@ class P2P {
 
 			// When a connection is started, send a message informing the remote
 			// peer of our ID
-			peer.write(JSON.stringify({type:"register", id: p2p.peerID}));
+			p2p.__send(peer, {type:"register", id: p2p.peerID});
 		});
-		
+
 		peer.on('close', function(){
 			p2p.__log('info', `Client Peer ${address}, ${peer.peerID} droped.`);
 			delete p2p.connectedPeers[peer.peerID];
 		});
 
 		peer.on('data', function(data){
+			// Messages are newline delimited; a single `data` event may
+			// contain several complete messages, a partial message, or
+			// both. Buffer and split on the delimiter.
 			buffer += data.toString();
-			try{
-				p2p.__read(JSON.parse(buffer), peer.remoteAddress, peer);
-				buffer = '';
-			}catch(error){
-
+			let nl;
+			while((nl = buffer.indexOf('\n')) !== -1){
+				let line = buffer.slice(0, nl);
+				buffer = buffer.slice(nl + 1);
+				if(!line.trim()) continue;
+				try{
+					p2p.__read(JSON.parse(line), peer.remoteAddress, peer);
+				}catch(error){
+					// incomplete or invalid JSON; keep the buffer for the
+					// rest of the message to arrive.
+				}
 			}
 		});
 
@@ -123,7 +141,7 @@ class P2P {
 
 		this.count = 1;
 
-		return setInterval(function(p2p){
+		let timer = setInterval(function(p2p){
 			// Copy the wanted peers list do we can reduce it.
 			let tryConnectionSet = new Set(p2p.wantedPeers);
 
@@ -139,7 +157,7 @@ class P2P {
 
 				// Every once and while send a heart beat keep the socket open.
 				if(peer.isClient && (p2p.count % 10) == 0){
-					peer.write(JSON.stringify({type:"heartbeat"}));
+					p2p.__send(peer, {type:"heartbeat"});
 				}
 			}
 
@@ -149,12 +167,16 @@ class P2P {
 				p2p.__connectPeer(peer);
 			}
 		}, interval || 1000, this);
+
+		// Unref so the reconnection timer does not keep the process alive
+		// on its own; a listening server or the user's own work will.
+		if(timer.unref) timer.unref();
+		return timer;
 	}
 
 	__listen (port){
 
 		let p2p = this;
-		let buffer = '';
 
 		let serverSocket = new net.Server(function (clientSocket) {
 
@@ -168,17 +190,27 @@ class P2P {
 
 			p2p.__log('info', 'server EVENT connection from client:', clientSocket.remoteAddress);
 
+			// Each connection keeps its own buffer; a shared buffer would
+			// interleave data from concurrent clients and corrupt streams.
+			let buffer = '';
+
 			// When a connection is started, send a message informing the remote
 			// peer of our ID
-			clientSocket.write(JSON.stringify({type:"register", id: p2p.peerID}));
+			p2p.__send(clientSocket, {type:"register", id: p2p.peerID});
 
 			clientSocket.on('data', function(data){
+				// Messages are newline delimited; see `__send`.
 				buffer += data.toString();
-				try{
-					p2p.__read(JSON.parse(buffer), clientSocket.remoteAddress, clientSocket);
-					buffer = '';
-				}catch(error){
-					;
+				let nl;
+				while((nl = buffer.indexOf('\n')) !== -1){
+					let line = buffer.slice(0, nl);
+					buffer = buffer.slice(nl + 1);
+					if(!line.trim()) continue;
+					try{
+						p2p.__read(JSON.parse(line), clientSocket.remoteAddress, clientSocket);
+					}catch(error){
+						// incomplete or invalid JSON; wait for more data.
+					}
 				}
 			});
 
@@ -227,7 +259,7 @@ class P2P {
 		// Send the message to the connected peers in the `sentTo` list.
 		for(let _peerID of sentTo){
 
-			this.connectedPeers[_peerID].write(JSON.stringify(message));
+			this.__send(this.connectedPeers[_peerID], message);
 		}
 	}
 
@@ -246,7 +278,7 @@ class P2P {
 		if(message.type === "register"){
 			this.__log('info', 'registering peer', message.id, socket.remoteAddress)
 
-			if(Object.keys(this.connectedPeers).includes(message.id)){
+			if(message.id in this.connectedPeers){
 
 				if(socket.peerConnectAddress){
 					this.connectedPeers[message.id].peerConnectAddress = socket.peerConnectAddress
@@ -275,6 +307,22 @@ class P2P {
 	onData(callback){
 		if(callback instanceof Function){
 			this.onDataCallbacks.push(callback);
+		}
+	}
+
+	// Tear down the peer: stop reconnecting, close the listening server, and
+	// destroy every active connection.
+	destroy(){
+		clearInterval(this.connectInterval);
+
+		for(let peerID in this.connectedPeers){
+			try{ this.connectedPeers[peerID].destroy(); }catch(error){}
+		}
+		this.connectedPeers = {};
+
+		if(this.server){
+			try{ this.server.close(); }catch(error){}
+			this.server = null;
 		}
 	}
 }

@@ -76,20 +76,20 @@ describe('P2P', () => {
 
 	describe('Network operations', () => {
 		let server1, server2;
+		let created = [];
 
 		after(() => {
-			if (server1) {
-				clearInterval(server1.connectInterval);
-				if (server1.server) server1.server.close();
-			}
-			if (server2) {
-				clearInterval(server2.connectInterval);
-				if (server2.server) server2.server.close();
-			}
+			for (const peer of created) peer.destroy();
+			created = [];
 		});
 
+		function track(...peers) {
+			created.push(...peers);
+			return peers;
+		}
+
 		test('should start listening on port', (t, done) => {
-			server1 = new P2P({listenPort: 17575});
+			[server1] = track(new P2P({listenPort: 17575}));
 
 			setTimeout(() => {
 				assert.ok(server1.server);
@@ -99,8 +99,10 @@ describe('P2P', () => {
 		});
 
 		test('should connect two peers and exchange messages', (t, done) => {
-			server1 = new P2P({listenPort: 17576, logLevel: []});
-			server2 = new P2P({listenPort: 17577, peers: ['localhost:17576'], logLevel: []});
+			[server1, server2] = track(
+				new P2P({listenPort: 17576, logLevel: [], connectInterval: 50}),
+				new P2P({listenPort: 17577, peers: ['localhost:17576'], logLevel: [], connectInterval: 50})
+			);
 
 			server1.onData((message) => {
 				if (message.type === 'test') {
@@ -115,9 +117,10 @@ describe('P2P', () => {
 		});
 
 		test('should forward messages across network', (t, done) => {
-			const server3 = new P2P({listenPort: 17578, logLevel: []});
-			server1 = new P2P({listenPort: 17579, peers: ['localhost:17578'], logLevel: []});
-			server2 = new P2P({listenPort: 17580, peers: ['localhost:17579'], logLevel: []});
+			const server3 = new P2P({listenPort: 17578, logLevel: [], connectInterval: 50});
+			server1 = new P2P({listenPort: 17579, peers: ['localhost:17578'], logLevel: [], connectInterval: 50});
+			server2 = new P2P({listenPort: 17580, peers: ['localhost:17579'], logLevel: [], connectInterval: 50});
+			track(server3, server1, server2);
 
 			let receivedCount = 0;
 
@@ -138,8 +141,6 @@ describe('P2P', () => {
 
 			function checkDone() {
 				if (receivedCount === 2) {
-					clearInterval(server3.connectInterval);
-					if (server3.server) server3.server.close();
 					done();
 				}
 			}
@@ -170,6 +171,90 @@ describe('P2P', () => {
 			p2p.broadcast(message, [excludeID]);
 
 			assert.ok(!message.sentTo.includes(excludeID));
+		});
+	});
+
+	describe('Framing and lifecycle', () => {
+		let created = [];
+
+		after(() => {
+			for (const peer of created) peer.destroy();
+			created = [];
+		});
+
+		function track(...peers) {
+			created.push(...peers);
+			return peers;
+		}
+
+		test('should split multiple messages coalesced in one TCP segment', (t, done) => {
+			const receiver = new P2P({listenPort: 17581, logLevel: [], connectInterval: 50});
+			track(receiver);
+
+			let got = [];
+			receiver.onData((message) => {
+				if (message.type === 'multi') got.push(message.body);
+				if (got.length === 2) {
+					assert.deepStrictEqual(got, ['one', 'two']);
+					done();
+				}
+			});
+
+			// Wait for the connection to establish, then write two messages
+			// in a single socket write to simulate TCP coalescing.
+			const sender = new P2P({});
+			track(sender);
+			setTimeout(() => {
+				let socket = require('net').connect(17581, 'localhost');
+				socket.on('connect', () => {
+					// register first so the peer is recorded, then send the
+					// two payload messages inside one write().
+					socket.write(
+						JSON.stringify({type: 'register', id: sender.peerID}) + '\n' +
+						JSON.stringify({type: 'multi', body: 'one'}) + '\n' +
+						JSON.stringify({type: 'multi', body: 'two'}) + '\n'
+					);
+				});
+			}, 200);
+		});
+
+		test('should keep concurrent client streams isolated', (t, done) => {
+			const receiver = new P2P({listenPort: 17582, logLevel: [], connectInterval: 50});
+			track(receiver);
+
+			let seen = new Set();
+			receiver.onData((message) => {
+				if (message.type === 'c') seen.add(message.body);
+				if (seen.size === 2) {
+					assert.ok(seen.has('a'));
+					assert.ok(seen.has('b'));
+					done();
+				}
+			});
+
+			const net = require('net');
+			function client(payload) {
+				let socket = net.connect(17582, 'localhost');
+				socket.on('connect', () => {
+					// send in two separate writes that may arrive together
+					socket.write(JSON.stringify({type: 'register', id: payload}) + '\n');
+					socket.write(JSON.stringify({type: 'c', body: payload}) + '\n');
+				});
+			}
+			setTimeout(() => { client('a'); client('b'); }, 200);
+		});
+
+		test('destroy should clear the interval and close the server', (t, done) => {
+			const p2p = new P2P({listenPort: 17583, logLevel: []});
+			assert.ok(p2p.server);
+			assert.ok(p2p.server.listening);
+			p2p.destroy();
+
+			assert.strictEqual(p2p.server, null);
+			assert.strictEqual(p2p.connectInterval._destroyed, true);
+			// a second destroy should not throw
+			assert.doesNotThrow(() => p2p.destroy());
+			done();
 		});
 	});
 });

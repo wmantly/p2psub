@@ -13,10 +13,13 @@ class P2PSub{
 
 		let preBroadcast = this.preBroadcast = args[0].preBroadcast || function(data){return data};
 
-		this.pubsub.subscribe(/.*/gi, function(data, topic){
+		// Locally published messages are broadcast to the mesh. The `__local`
+		// flag is set on messages that arrive from the network (see onData
+		// below) so they are not re-broadcast and loop.
+		this.pubsub.subscribe(/.*/gi, function(data, topic, from){
 			if(data.__local) return false;
 			let body = preBroadcast(data, topic);
-			
+
 			if(body) p2p.broadcast({
 				type:'topic',
 				body:{
@@ -26,9 +29,12 @@ class P2PSub{
 			});
 		});
 
+		// Messages arriving from the network are republished locally. The
+		// origin peer id (`data.from`) is forwarded as the `from` argument so
+		// subscribers can attribute or filter messages by peer.
 		this.p2p.onData(function(data){
 			data.body.data.__local = true;
-			if(data.type === 'topic') pubsub.publish(data.body.topic, data.body.data);
+			if(data.type === 'topic') pubsub.publish(data.body.topic, data.body.data, data.from);
 		});
 	}
 
@@ -36,8 +42,11 @@ class P2PSub{
 		return this.pubsub.subscribe.apply(this.pubsub, arguments);
 	}
 
-	publish(){
-		return this.pubsub.publish.apply(this.pubsub, arguments);
+	publish(topic, data, from){
+		// Locally originated messages are attributed to this peer unless the
+		// caller passes an explicit `from`.
+		if(from === undefined) from = this.p2p.peerID;
+		return this.pubsub.publish(topic, data, from);
 	}
 
 	addPeer(){
@@ -46,6 +55,11 @@ class P2PSub{
 
 	removePeer(){
 		return this.p2p.removePeer.apply(this.p2p, arguments);
+	}
+
+	// Tear down the underlying P2P layer (reconnection timer, server, sockets).
+	destroy(){
+		return this.p2p.destroy();
 	}
 }
 
