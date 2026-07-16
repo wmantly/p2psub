@@ -172,6 +172,14 @@
                     <p>Subscribe to topics using powerful regular expression patterns</p>
                 </div>
                 <div class="feature">
+                    <h3>Async / Await</h3>
+                    <p><code>publish()</code> returns a Promise and awaits async listeners</p>
+                </div>
+                <div class="feature">
+                    <h3>Peer Attribution</h3>
+                    <p>Subscribe callbacks receive the originating peer id to identify bad actors</p>
+                </div>
+                <div class="feature">
                     <h3>Modular Design</h3>
                     <p>Separate P2P and PubSub classes for maximum customization</p>
                 </div>
@@ -224,13 +232,23 @@ const p2p = new P2PSub({
 });
 
 // Subscribe to a topic
-p2p.subscribe('announcement', (data) => {
-    console.log(data.message);
+p2p.subscribe('announcement', (data, topic, from) => {
+    console.log(`from ${from}: ${data.message}`);
 });
 
-// Publish to the network
-p2p.publish('announcement', {
+// Publish to the network. publish() returns a Promise that resolves once
+// all matching listeners (including async ones) have settled.
+await p2p.publish('announcement', {
     message: 'Hello, mesh network!'
+});</code></pre>
+
+            <h2>Peer Attribution</h2>
+            <p>Subscribe callbacks receive the originating peer's id as a third argument, so you can ignore or kick misbehaving peers:</p>
+            <pre><code>const badPeers = new Set();
+
+p2p.subscribe(/.*/, (data, topic, from) => {
+    if (badPeers.has(from)) return; // ignore banned peers
+    console.log(`${from} -> ${topic}`);
 });</code></pre>
 
             <h2>Pattern Matching</h2>
@@ -271,6 +289,14 @@ p2p.subscribe(/./, (data, topic) => {
             </div>
 
             <div class="api-method">
+                <strong>connectInterval</strong> (Number, optional)
+                <ul>
+                    <li>Milliseconds between connection attempts and heartbeats</li>
+                    <li>Default: <code>1000</code></li>
+                </ul>
+            </div>
+
+            <div class="api-method">
                 <strong>preBroadcast(data, topic)</strong> (Function, optional)
                 <ul>
                     <li>Filter or modify data before network broadcast</li>
@@ -301,12 +327,12 @@ p2p.subscribe(/./, (data, topic) => {
             <h3>P2PSub Methods</h3>
             <div class="api-method">
                 <code>subscribe(topic, callback)</code>
-                <p>Subscribe to a topic using a String or RegExp pattern</p>
+                <p>Subscribe to a topic using a String or RegExp pattern. Returns an unsubscribe function.</p>
             </div>
 
             <div class="api-method">
-                <code>publish(topic, data)</code>
-                <p>Publish data to a topic across the network</p>
+                <code>publish(topic, data, [from])</code>
+                <p>Publish data to a topic across the network. Returns a Promise that resolves once all listeners settle; async listeners are awaited.</p>
             </div>
 
             <div class="api-method">
@@ -317,6 +343,11 @@ p2p.subscribe(/./, (data, topic) => {
             <div class="api-method">
                 <code>removePeer(peer)</code>
                 <p>Disconnect and remove a peer</p>
+            </div>
+
+            <div class="api-method">
+                <code>destroy()</code>
+                <p>Stop the reconnection timer, close the listening server, and destroy all peer sockets</p>
             </div>
 
             <h2>CLI Usage</h2>

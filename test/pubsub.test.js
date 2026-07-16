@@ -137,4 +137,52 @@ describe('PubSub', () => {
 		assert.strictEqual(topics.length, 1);
 		assert.strictEqual(topics[0], callback);
 	});
+
+	test('publish should return a Promise', async () => {
+		const pubsub = new PubSub();
+		const result = pubsub.publish('topic', {});
+		assert.ok(result && typeof result.then === 'function');
+		await result;
+	});
+
+	test('publish should resolve after async listeners settle', async () => {
+		const pubsub = new PubSub();
+		let order = [];
+
+		pubsub.subscribe('topic', async () => {
+			await new Promise((r) => setTimeout(r, 20));
+			order.push('async-listener-done');
+		});
+
+		await pubsub.publish('topic', {});
+		// If publish awaited the async listener, this runs after it settled.
+		order.push('after-publish');
+		assert.deepStrictEqual(order, ['async-listener-done', 'after-publish']);
+	});
+
+	test('publish should forward the from argument to listeners', (t, done) => {
+		const pubsub = new PubSub();
+		pubsub.subscribe('topic', (data, topic, from) => {
+			assert.strictEqual(topic, 'topic');
+			assert.strictEqual(from, 'peer-xyz');
+			done();
+		});
+		pubsub.publish('topic', {}, 'peer-xyz');
+	});
+
+	test('subscribe should return an unsubscribe handle', (t, done) => {
+		const pubsub = new PubSub();
+		let calls = 0;
+
+		const unsubscribe = pubsub.subscribe('topic', () => { calls++; });
+
+		assert.strictEqual(typeof unsubscribe, 'function');
+		pubsub.publish('topic', {}).then(() => {
+			unsubscribe();
+			return pubsub.publish('topic', {});
+		}).then(() => {
+			assert.strictEqual(calls, 1);
+			done();
+		});
+	});
 });
