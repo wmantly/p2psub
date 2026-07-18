@@ -1,4 +1,4 @@
-#!/usr/bin/env nodejs
+#!/usr/bin/env node
 
 const {PubSub} = require('./pubsub');
 const {P2P} = require('./p2p');
@@ -7,11 +7,12 @@ const ps = new PubSub();
 
 class P2PSub{
 	constructor(...args){
-		let p2p = this.p2p = new P2P(...args);
+		let options = args[0] || {};
+		let p2p = this.p2p = new P2P(options);
 
 		let pubsub = this.pubsub = new PubSub();
 
-		let preBroadcast = this.preBroadcast = args[0].preBroadcast || function(data){return data};
+		let preBroadcast = this.preBroadcast = options.preBroadcast || function(data){return data};
 
 		// Locally published messages are broadcast to the mesh. The `__local`
 		// flag is set on messages that arrive from the network (see onData
@@ -73,11 +74,11 @@ if (require.main === module) {
 	const listenPort = args[1];
 	const peers = args.slice(2);
 
-	if(listenPort === "help"){
+	if(!listenPort || listenPort === "help"){
 		console.error('Please supply the server port and list of clients to connect too;')
 		console.error(`${exec_name} <server port> <client 1> <client 2> <client 3> ...` )
 		console.error(`${exec_name} 7575 10.1.0.1:7575 10.2.0.1:7575 10.3.0.1:7575` )
-		process.exit(0)
+		process.exit(listenPort === "help" ? 0 : 1)
 	}
 
 	// console.log('port:', server_port, 'clients:', clients_list)

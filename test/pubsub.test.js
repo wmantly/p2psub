@@ -185,4 +185,30 @@ describe('PubSub', () => {
 			done();
 		});
 	});
+
+	test('unsubscribe handle should work for regex subscriptions', (t, done) => {
+		const pubsub = new PubSub();
+		let calls = 0;
+
+		const unsubscribe = pubsub.subscribe(/^topic/, () => { calls++; });
+
+		pubsub.publish('topic-one', {}).then(() => {
+			unsubscribe();
+			return pubsub.publish('topic-two', {});
+		}).then(() => {
+			assert.strictEqual(calls, 1);
+			done();
+		});
+	});
+
+	test('publish should reject when a listener throws', async () => {
+		const pubsub = new PubSub();
+		const error = new Error('listener error');
+
+		pubsub.subscribe('topic', () => {
+			throw error;
+		});
+
+		await assert.rejects(pubsub.publish('topic', {}), error);
+	});
 });

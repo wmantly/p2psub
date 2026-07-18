@@ -191,12 +191,26 @@
                     <h3>Easy to Use</h3>
                     <p>Simple API with CLI support for quick relay setup</p>
                 </div>
+                <div class="feature">
+                    <h3>TypeScript Ready</h3>
+                    <p>Built-in TypeScript declarations with full API coverage</p>
+                </div>
             </div>
 
             <h2>Installation</h2>
             <pre><code>npm install p2psub</code></pre>
+            <p>Requires Node.js <strong>>= 18.0.0</strong>.</p>
             <a href="https://www.npmjs.com/package/p2psub" class="install-btn">View on NPM</a>
             <a href="https://github.com/wmantly/p2psub" class="install-btn">View on GitHub</a>
+
+            <h2>TypeScript Support</h2>
+            <p>p2psub ships with built-in TypeScript declarations. Import the classes directly:</p>
+            <pre><code>import {P2PSub, P2P, PubSub, ps} from 'p2psub';
+
+const p2p = new P2PSub({
+    listenPort: 7575,
+    peers: ['10.10.10.11:7575']
+});</code></pre>
 
             <h2>Quick Start</h2>
 
@@ -351,7 +365,10 @@ p2p.subscribe(/./, (data, topic) => {
             </div>
 
             <h2>CLI Usage</h2>
-            <p>Set up a simple relay peer without writing code:</p>
+            <p>Set up a simple relay peer without writing code. The logging level is automatically set to <code>info</code>.</p>
+            <p>With <code>npx</code> or a global install:</p>
+            <pre><code>npx p2psub 7575 10.1.0.1:7575 10.2.0.1:7575</code></pre>
+            <p>Or run directly from the repository:</p>
             <pre><code>./app.js 7575 10.1.0.1:7575 10.2.0.1:7575</code></pre>
 
             <h2>Testing</h2>
