@@ -10,6 +10,13 @@ describe('P2PSub', () => {
 		assert.ok(p2psub.pubsub);
 	});
 
+	test('should create instance with no arguments', () => {
+		const p2psub = new P2PSub();
+		assert.ok(p2psub);
+		assert.ok(p2psub.p2p);
+		assert.ok(p2psub.pubsub);
+	});
+
 	test('should expose subscribe method', () => {
 		const p2psub = new P2PSub({});
 		assert.strictEqual(typeof p2psub.subscribe, 'function');
@@ -173,6 +180,19 @@ describe('P2PSub', () => {
 		p2psub.addPeer('192.168.1.1:7575');
 		p2psub.removePeer('192.168.1.1:7575');
 		assert.ok(!p2psub.p2p.wantedPeers.has('192.168.1.1:7575'));
+	});
+
+	test('should add and remove an array of peers dynamically', () => {
+		const p2psub = new P2PSub({});
+		const peers = ['192.168.1.1:7575', '192.168.1.2:7575'];
+
+		p2psub.addPeer(peers);
+		assert.strictEqual(p2psub.p2p.wantedPeers.size, 2);
+
+		p2psub.removePeer(peers[0]);
+		assert.strictEqual(p2psub.p2p.wantedPeers.size, 1);
+		assert.ok(!p2psub.p2p.wantedPeers.has(peers[0]));
+		assert.ok(p2psub.p2p.wantedPeers.has(peers[1]));
 	});
 
 	test('should attribute locally published messages to the local peer', (t, done) => {

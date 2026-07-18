@@ -21,6 +21,20 @@ Mesh peer-to-peer JSON Pub/Sub with no external dependencies. Each peer can act 
 npm install p2psub
 ```
 
+Requires Node.js **>= 18.0.0** (the test suite uses the built-in `node:test` runner).
+
+## TypeScript Support
+
+p2psub ships with TypeScript declarations. Import the classes directly:
+
+```typescript
+import {P2PSub, P2P, PubSub, ps} from 'p2psub';
+
+const p2p = new P2PSub({
+    listenPort: 7575,
+    peers: ['10.10.10.11:7575']
+});
+```
 
 ## Usage
 
@@ -211,11 +225,19 @@ const p2p = new P2PSub({
 
 A simple relay peer can be set up using just the CLI, no code required. This peer will only relay messages to all its connected peers. The logging level is automatically set to `info`.
 
+If the package is installed globally or run with `npx`:
+
+```bash
+npx p2psub 7575 10.1.0.1:7575 10.2.0.1:7575 10.3.0.1:7575 ...
+```
+
+Or, when running from the repository directly:
+
 ```bash
 ./app.js 7575 10.1.0.1:7575 10.2.0.1:7575 10.3.0.1:7575 ...
 ```
 
-The first argument is the listening port, optionally followed by a space-separated list of peers to connect with.
+The first argument is the listening port, optionally followed by a space-separated list of peers to connect with. Run with `help` (or omit the port) to print usage instructions.
 
 ## API Reference
 

@@ -1,14 +1,22 @@
 {
   "name": "p2psub",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Mesh peer-to-peer JSON Pub/Sub with no external dependencies. Each peer can act as a server and client, just a client, or a simple relay peer. Topics can be subscribed to using a simple string or regex pattern.",
   "main": "app.js",
-  "author": [
-    {
-      "name": "William Mantly",
-      "email": "wmantly@gmail.com"
-    }
+  "types": "index.d.ts",
+  "bin": "app.js",
+  "files": [
+    "app.js",
+    "p2p.js",
+    "pubsub.js",
+    "index.d.ts",
+    "docs/",
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "test": "node --test test/*.test.js"
   },
@@ -24,5 +32,11 @@
       "type": "git",
       "url": "https://github.com/wmantly/p2psub"
     },
+  "author": [
+    {
+      "name": "William Mantly",
+      "email": "wmantly@gmail.com"
+    }
+  ],
   "license": "MIT"
 }
